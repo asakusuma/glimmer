@@ -47,6 +47,7 @@ export class InlineBlock extends Block {
 
   constructor(options: InlineBlockOptions) {
     super(options);
+    // debugger;
     this.locals = options.locals;
   }
 
@@ -66,6 +67,7 @@ export class InlineBlock extends Block {
 export abstract class TopLevelTemplate extends Block {
   initBlocks(blocks = this['children'], parentTable = this['symbolTable']): this {
     blocks.forEach(block => {
+      debugger;
       let table = SymbolTable.initForBlock({ parent: parentTable, block });
       this.initBlocks(block['children'], table);
     });

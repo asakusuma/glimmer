@@ -125,6 +125,7 @@ export class InlineBlockCompiler extends Compiler {
 
   constructor(block: InlineBlock, env: Environment) {
     super(block, env);
+    // debugger;
     this.ops = new CompileIntoList(env, block.symbolTable);
   }
 
