@@ -25,7 +25,7 @@ import {
 import * as Syntax from './syntax/core';
 import { Environment } from './environment';
 import SymbolTable from './symbol-table';
-import { Block, CompiledBlock, EntryPoint, InlineBlock, Layout } from './compiled/blocks';
+import { Block, CompiledBlock, EntryPoint, InlineBlock, Layout, BlockMeta } from './compiled/blocks';
 
 import {
   OpenComponentOpcode,
@@ -64,16 +64,23 @@ abstract class Compiler {
     this.symbolTable = block.symbolTable;
   }
 
-  protected compileStatement(statement: StatementSyntax, ops: StatementCompilationBuffer) {
-    this.env.statement(statement).compile(ops, this.env);
+  protected compileStatement(statement: StatementSyntax, ops: StatementCompilationBuffer, symbolTable: SymbolTable) {
+    this.env.statement(statement, symbolTable).compile(ops, this.env);
   }
 }
 
-function compileStatement(env: Environment, statement: StatementSyntax, ops: StatementCompilationBuffer) {
-  env.statement(statement).compile(ops, env);
+function compileStatement(env: Environment, statement: StatementSyntax, ops: StatementCompilationBuffer, symbolTable: SymbolTable) {
+  env.statement(statement, symbolTable).compile(ops, env);
 }
 
 export default Compiler;
+
+function injectMetaIntoSymbolTable(symbolTable, meta) {
+  if (meta) {
+    symbolTable.setMeta(meta);
+  }
+  return symbolTable;
+}
 
 export class EntryPointCompiler extends Compiler {
   private ops: StatementCompilationBuffer;
@@ -92,7 +99,7 @@ export class EntryPointCompiler extends Compiler {
 
     while (current) {
       let next = program.nextNode(current);
-      this.compileStatement(current, ops);
+      this.compileStatement(current, ops, injectMetaIntoSymbolTable(this.symbolTable, block.meta));
       current = next;
     }
 
@@ -138,7 +145,7 @@ export class InlineBlockCompiler extends Compiler {
 
     while (current) {
       let next = program.nextNode(current);
-      this.compileStatement(current, ops);
+      this.compileStatement(current, ops, block.meta, injectMetaIntoSymbolTable(this.symbolTable, block.meta));
       current = next;
     }
 
@@ -262,9 +269,13 @@ class WrappedBuilder {
 
     list.append(new DidCreateElementOpcode());
 
-    this.attrs['buffer'].forEach(statement => compileStatement(env, statement, list));
+    this.attrs['buffer'].forEach((statement) => {
+      return compileStatement(env, statement, list, injectMetaIntoSymbolTable(layout.symbolTable, layout.meta))
+    });
 
-    layout.program.forEachNode(statement => compileStatement(env, statement, list));
+    layout.program.forEachNode((statement) => {
+      return compileStatement(env, statement, list, injectMetaIntoSymbolTable(layout.symbolTable, layout.meta));
+    });
 
     list.append(new CloseElementOpcode());
 
@@ -304,7 +315,7 @@ class UnwrappedBuilder {
     let attrsInserted = false;
 
     this.layout.program.forEachNode(statement => {
-      compileStatement(env, statement, list);
+      compileStatement(env, statement, list, injectMetaIntoSymbolTable(this.layout.symbolTable, this.layout.meta));
 
       if (!attrsInserted && isOpenElement(statement)) {
         list.append(new DidCreateElementOpcode());

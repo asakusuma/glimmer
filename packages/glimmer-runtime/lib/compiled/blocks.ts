@@ -13,6 +13,11 @@ export interface BlockOptions {
   children: InlineBlock[];
   program: Program;
   symbolTable: SymbolTable;
+  meta: BlockMeta;
+}
+
+export interface BlockMeta {
+  moduleName: String
 }
 
 export class CompiledBlock {
@@ -29,12 +34,14 @@ export abstract class Block {
   public children: InlineBlock[];
   public program: Program;
   public symbolTable: SymbolTable;
+  public meta: BlockMeta = null;
   protected compiled: CompiledBlock = null;
 
   constructor(options: BlockOptions) {
     this.symbolTable = options.symbolTable || null;
     this.children = options.children;
     this.program = options.program;
+    this.meta = options.meta || null;
   }
 }
 

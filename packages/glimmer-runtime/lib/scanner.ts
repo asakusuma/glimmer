@@ -16,14 +16,15 @@ export default class Scanner {
 
   scanEntryPoint(): EntryPoint {
     return this.scanTop<EntryPoint>(({ program, children }) => {
-      return EntryPoint.create({ children, program, symbolTable: null });
+      let { meta } = this.spec;
+      return EntryPoint.create({ meta, children, program, symbolTable: null });
     });
   }
 
   scanLayout(): Layout {
     return this.scanTop<Layout>(({ program, children }) => {
-      let { named, yields } = this.spec;
-      return Layout.create({ children, program, named, yields, symbolTable: null });
+      let { named, yields, meta } = this.spec;
+      return Layout.create({ meta, children, program, named, yields, symbolTable: null });
     });
   }
 

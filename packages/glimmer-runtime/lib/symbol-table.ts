@@ -1,5 +1,5 @@
 import { InternedString, dict } from 'glimmer-util';
-import { Block, InlineBlock, Layout, EntryPoint } from './compiled/blocks';
+import { Block, InlineBlock, Layout, EntryPoint, BlockMeta } from './compiled/blocks';
 
 export default class SymbolTable {
   static initForEntryPoint(top: EntryPoint): SymbolTable {
@@ -14,9 +14,11 @@ export default class SymbolTable {
     return block.symbolTable = new SymbolTable(parent, block).initBlock(block);
   }
 
+  private moduleName: String;
   private parent: SymbolTable;
   private top: SymbolTable;
   private template: Block;
+  private meta: BlockMeta;
   private locals   = dict<number>();
   private named    = dict<number>();
   private yields   = dict<number>();
@@ -26,6 +28,10 @@ export default class SymbolTable {
     this.parent = parent;
     this.top = parent ? parent.top : this;
     this.template = template;
+  }
+
+  setMeta(meta) {
+    this.meta = meta;
   }
 
   initEntryPoint(_: any): this {
