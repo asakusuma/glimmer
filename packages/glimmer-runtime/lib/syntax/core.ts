@@ -1148,6 +1148,10 @@ export class NamedArgs {
     this.map[<string>key] = value;
   }
 
+  remove(key: InternedString) {
+    delete this.map[<string>key];
+  }
+
   at(key: InternedString): ExpressionSyntax<Opaque> {
     return this.map[<string>key];
   }
