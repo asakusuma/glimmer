@@ -324,7 +324,15 @@ export class EvaluatePartialOpcode extends Opcode {
   }
 
   evaluate(vm: VM) {
-    let { serializedTemplate } = vm.env.lookupPartial([this.name.reference.value()]);
+    let reference = this.name.reference;
+
+    // If the partial name is dynamic
+    if (!reference) {
+      let scope = vm.scope().getSelf();
+      reference = scope.referenceFromParts(this.name.parts);
+    }
+
+    let { serializedTemplate } = vm.env.lookupPartial([reference.value()]);
     let scanner = new Scanner(serializedTemplate, vm.env);
     let block = scanner.scanInlineBlock(this.compiler.symbolTable);
     vm.invokeBlock(block, vm.frame.getArgs());
