@@ -62,6 +62,15 @@ export class InlineBlock extends Block {
     let ops = new InlineBlockCompiler(this, env).compile();
     return this.compiled = new CompiledBlock(ops, this.symbolTable.size);
   }
+
+  initBlocks(blocks = this['children'], parentTable = this['symbolTable']): this {
+    blocks.forEach(block => {
+      debugger;
+      let table = SymbolTable.initForBlock({ parent: parentTable, block });
+      this.initBlocks(block['children'], table);
+    });
+    return this;
+  }
 }
 
 export abstract class TopLevelTemplate extends Block {

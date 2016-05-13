@@ -62,12 +62,45 @@ QUnit.test('static partial with self reference', assert => {
 });
 
 QUnit.test('static partial with local reference', assert => {
-  let template = compile(`{{#each qualities as |quality|}}{{partial 'test'}}. {{/each}}`);
+  let template = compile(`{{#each qualities key="id" as |quality|}}{{partial 'test'}}. {{/each}}`);
+
+  env.registerPartial('test', `You {{quality.value}}`);
+  render(template, { qualities: [{id: 1, value: 'smaht'}, {id: 2, value: 'loyal'}] });
+
+  equalTokens(root, `You smaht. You loyal. `);
+  rerender();
+  equalTokens(root, `You smaht. You loyal. `);
+});
+
+QUnit.test('dynamic partial with static content', assert => {
+  let template = compile(`Before {{partial name}} After`);
+
+  env.registerPartial('test', `<div>Testing</div>`);
+  render(template, { name: 'test' });
+
+  equalTokens(root, `Before <div>Testing</div> After`);
+  rerender({ name: 'test' });
+  equalTokens(root, `Before <div>Testing</div> After`);
+});
+
+QUnit.test('dynamic partial with self reference', assert => {
+  let template = compile(`{{partial name}}`);
+
+  env.registerPartial('trump', `I know {{item}}. I have the best {{item}}s.`);
+  render(template, { item: 'partial', name: 'trump' });
+
+  equalTokens(root, `I know partial. I have the best partials.`);
+  rerender({ name: 'trump' });
+  equalTokens(root, `I know partial. I have the best partials.`);
+});
+
+QUnit.test('dynamic partial with local reference', assert => {
+  let template = compile(`{{#each qualities as |quality|}}{{partial name}}. {{/each}}`);
 
   env.registerPartial('test', `You {{quality}}`);
-  render(template, { qualities: ['smaht', 'loyal'] });
+  render(template, { qualities: ['smaht', 'loyal'], name: 'test' });
 
   equalTokens(root, `You smaht. You loyal.`);
-  rerender();
+  rerender({ name: 'test' });
   equalTokens(root, `You smaht. You loyal.`);
 });

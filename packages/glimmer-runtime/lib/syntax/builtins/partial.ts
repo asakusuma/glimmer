@@ -13,7 +13,7 @@ import {
   TestOpcode,
   JumpUnlessOpcode,
   JumpOpcode,
-  EvaluateOpcode,
+  EvaluatePartialOpcode,
   ExitOpcode
 } from '../../compiled/opcodes/vm';
 
@@ -36,6 +36,8 @@ export default class PartialSyntax extends StatementSyntax {
   }
 
   compile(compiler: CompileInto & SymbolLookup, env: Environment) {
+
+    /*
     //        Enter(BEGIN, END)
     // BEGIN: Noop
     //        PutArgs
@@ -47,7 +49,6 @@ export default class PartialSyntax extends StatementSyntax {
     //        Evaluate(inverse)
     // END:   Noop
     //        Exit
-    console.log('wtf2');
     let { serializedTemplate } = env.lookupPartial(['test']);
 
     debugger;
@@ -59,7 +60,10 @@ export default class PartialSyntax extends StatementSyntax {
 
     compiler.append(new PutArgsOpcode({ args: this.args.compile(compiler, env) }));
     compiler.append(new EvaluateOpcode({ debug: "default", block }));
-/*
+    */
+
+    let compiledPartialNameExpression = this.args.positional.values[0].compile(compiler, env);
+
     let BEGIN = new LabelOpcode({ label: "BEGIN" });
     let ELSE = new LabelOpcode({ label: "ELSE" });
     let END = new LabelOpcode({ label: "END" });
@@ -69,21 +73,13 @@ export default class PartialSyntax extends StatementSyntax {
     compiler.append(new PutArgsOpcode({ args: this.args.compile(compiler, env) }));
     compiler.append(new TestOpcode());
 
-    if (this.templates.inverse) {
-      compiler.append(new JumpUnlessOpcode({ target: ELSE }));
-    } else {
-      compiler.append(new JumpUnlessOpcode({ target: END }));
-    }
-
-    compiler.append(new JumpOpcode({ target: END }));
-
-    if (this.templates.inverse) {
-      compiler.append(ELSE);
-      compiler.append(new EvaluateOpcode({ debug: "inverse", block: this.templates.inverse }));
-    }
+    compiler.append(new JumpUnlessOpcode({ target: END }));
+    compiler.append(new EvaluatePartialOpcode({
+      name: compiledPartialNameExpression,
+      compiler: compiler
+    }));
 
     compiler.append(END);
     compiler.append(new ExitOpcode());
-    */
   }
 }

@@ -7,6 +7,12 @@ import { turbocharge } from '../../utils';
 import { NULL_REFERENCE } from '../../references';
 import { ListSlice, Opaque, Slice, Dict, dict, assign } from 'glimmer-util';
 import { CONSTANT_TAG, ReferenceCache, Revision, RevisionTag, isConst, isModified } from 'glimmer-reference';
+import {
+  CompileInto,
+  SymbolLookup,
+  Statement as StatementSyntax
+} from '../../syntax';
+import Scanner from '../../scanner';
 
 export class PushChildScopeOpcode extends Opcode {
   public type = "push-child-scope";
@@ -306,6 +312,33 @@ export class EvaluateOpcode extends Opcode {
   }
 }
 
+export class EvaluatePartialOpcode extends Opcode {
+  public type = "evaluate-partial";
+  public compiler: CompileInto;
+  public name: CompiledExpression;
+
+  constructor({ name, compiler }: { compiler: CompileInto & SymbolLookup, name: CompiledExpression }) {
+    super();
+    this.name = name;
+    this.compiler = compiler;
+  }
+
+  evaluate(vm: VM) {
+    let { serializedTemplate } = vm.env.lookupPartial([this.name.reference.value()]);
+    let scanner = new Scanner(serializedTemplate, vm.env);
+    let block = scanner.scanInlineBlock(this.compiler.symbolTable);
+    vm.invokeBlock(block, vm.frame.getArgs());
+  }
+
+  toJSON(): OpcodeJSON {
+    return {
+      guid: this._guid,
+      type: this.type,
+      args: [this.name]
+    };
+  }
+}
+
 export class TestOpcode extends Opcode {
   public type = "test";
 
@@ -477,4 +510,3 @@ export class DidModifyOpcode extends UpdatingOpcode {
     this.target.didModify();
   }
 }
-
