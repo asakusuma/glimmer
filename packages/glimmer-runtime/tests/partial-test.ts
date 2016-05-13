@@ -57,18 +57,18 @@ QUnit.test('static partial with self reference', assert => {
   render(template, { item: 'partial' });
 
   equalTokens(root, `I know partial. I have the best partials.`);
-  rerender();
+  rerender({ item: 'partial' });
   equalTokens(root, `I know partial. I have the best partials.`);
 });
 
 QUnit.test('static partial with local reference', assert => {
-  let template = compile(`{{#each qualities key="id" as |quality|}}{{partial 'test'}}. {{/each}}`);
+  let template = compile(`{{#each qualities key='id' as |quality|}}{{partial 'test'}}. {{/each}}`);
 
   env.registerPartial('test', `You {{quality.value}}`);
   render(template, { qualities: [{id: 1, value: 'smaht'}, {id: 2, value: 'loyal'}] });
 
   equalTokens(root, `You smaht. You loyal. `);
-  rerender();
+  rerender({ qualities: [{id: 1, value: 'smaht'}, {id: 2, value: 'loyal'}] });
   equalTokens(root, `You smaht. You loyal. `);
 });
 
@@ -86,21 +86,21 @@ QUnit.test('dynamic partial with static content', assert => {
 QUnit.test('dynamic partial with self reference', assert => {
   let template = compile(`{{partial name}}`);
 
-  env.registerPartial('trump', `I know {{item}}. I have the best {{item}}s.`);
-  render(template, { item: 'partial', name: 'trump' });
+  env.registerPartial('test', `I know {{item}}. I have the best {{item}}s.`);
+  render(template, { name: 'test', item: 'partial' });
 
   equalTokens(root, `I know partial. I have the best partials.`);
-  rerender({ name: 'trump' });
+  rerender({ name: 'test', item: 'partial' });
   equalTokens(root, `I know partial. I have the best partials.`);
 });
 
 QUnit.test('dynamic partial with local reference', assert => {
-  let template = compile(`{{#each qualities as |quality|}}{{partial name}}. {{/each}}`);
+  let template = compile(`{{#each qualities key='id' as |quality|}}{{partial name}}. {{/each}}`);
 
   env.registerPartial('test', `You {{quality}}`);
-  render(template, { qualities: ['smaht', 'loyal'], name: 'test' });
+  render(template, { name: 'test', qualities: ['smaht', 'loyal'] });
 
-  equalTokens(root, `You smaht. You loyal.`);
-  rerender({ name: 'test' });
-  equalTokens(root, `You smaht. You loyal.`);
+  equalTokens(root, `You smaht. You loyal. `);
+  rerender({ name: 'test', qualities: ['smaht', 'loyal'] });
+  equalTokens(root, `You smaht. You loyal. `);
 });

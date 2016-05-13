@@ -78,6 +78,7 @@ export class PutValueOpcode extends Opcode {
   }
 
   evaluate(vm: VM) {
+    debugger;
     vm.evaluateOperand(this.expression);
   }
 
@@ -324,15 +325,9 @@ export class EvaluatePartialOpcode extends Opcode {
   }
 
   evaluate(vm: VM) {
-    let reference = this.name.reference;
+    let name = this.name.evaluate(vm).value();
 
-    // If the partial name is dynamic
-    if (!reference) {
-      let scope = vm.scope().getSelf();
-      reference = scope.referenceFromParts(this.name.parts);
-    }
-
-    let { serializedTemplate } = vm.env.lookupPartial([reference.value()]);
+    let { serializedTemplate } = vm.env.lookupPartial([name]);
     let scanner = new Scanner(serializedTemplate, vm.env);
     let block = scanner.scanInlineBlock(this.compiler.symbolTable);
     vm.invokeBlock(block, vm.frame.getArgs());
