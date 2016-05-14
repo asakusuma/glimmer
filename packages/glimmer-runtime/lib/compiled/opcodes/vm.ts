@@ -316,9 +316,9 @@ export class EvaluateOpcode extends Opcode {
 export class EvaluatePartialOpcode extends Opcode {
   public type = "evaluate-partial";
   public compiler: CompileInto;
-  public name: CompiledExpression;
+  public name: CompiledExpression<any>;
 
-  constructor({ name, compiler }: { compiler: CompileInto & SymbolLookup, name: CompiledExpression }) {
+  constructor({ name, compiler }: { compiler: CompileInto & SymbolLookup, name: CompiledExpression<any> }) {
     super();
     this.name = name;
     this.compiler = compiler;
@@ -333,7 +333,7 @@ export class EvaluatePartialOpcode extends Opcode {
     let block = scanner.scanInlineBlock(this.compiler.symbolTable);
     vm.invokeBlock(block, vm.frame.getArgs());
 
-    if (!isConst(this.name)) {
+    if (!isConst(reference)) {
       vm.pushDynamicScope();
       vm.updateWith(new EvaluateUpdatingPartialOpcode({
         compiler: this.compiler,
