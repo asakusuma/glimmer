@@ -5,6 +5,7 @@ import { VM, UpdatingVM, BindDynamicScopeCallback } from '../../vm';
 import { Layout, InlineBlock } from '../blocks';
 import { turbocharge } from '../../utils';
 import { NULL_REFERENCE } from '../../references';
+import { PathReference } from 'glimmer-reference';
 import { ListSlice, Opaque, Slice, Dict, dict, assign } from 'glimmer-util';
 import { CONSTANT_TAG, ReferenceCache, Revision, RevisionTag, isConst, isModified } from 'glimmer-reference';
 import {
@@ -78,7 +79,6 @@ export class PutValueOpcode extends Opcode {
   }
 
   evaluate(vm: VM) {
-    debugger;
     vm.evaluateOperand(this.expression);
   }
 
@@ -325,12 +325,53 @@ export class EvaluatePartialOpcode extends Opcode {
   }
 
   evaluate(vm: VM) {
-    let name = this.name.evaluate(vm).value();
+    let reference = this.name.evaluate(vm);
+    let name = reference.value();
 
     let { serializedTemplate } = vm.env.lookupPartial([name]);
     let scanner = new Scanner(serializedTemplate, vm.env);
     let block = scanner.scanInlineBlock(this.compiler.symbolTable);
     vm.invokeBlock(block, vm.frame.getArgs());
+
+    if (!isConst(this.name)) {
+      vm.pushDynamicScope();
+      vm.updateWith(new EvaluateUpdatingPartialOpcode({
+        compiler: this.compiler,
+        nameReference: reference,
+        name
+      }));
+    }
+  }
+
+  toJSON(): OpcodeJSON {
+    return {
+      guid: this._guid,
+      type: this.type,
+      args: [this.name]
+    };
+  }
+}
+
+
+export class EvaluateUpdatingPartialOpcode extends UpdatingOpcode {
+  public type = "evaluate-updating-partial";
+  public compiler: CompileInto;
+  public name: String;
+  public nameReference: PathReference;
+
+  constructor({ name: String, compiler, nameReference }: { name: String, compiler: CompileInto & SymbolLookup, nameReference: PathReference }) {
+    super();
+    this.compiler = compiler;
+    this.nameReference = nameReference;
+    this.name = name;
+  }
+
+  evaluate(vm: VM) {
+    let name = this.nameReference.value();
+
+    if (name !== this.name) {
+      vm.throw();
+    }
   }
 
   toJSON(): OpcodeJSON {

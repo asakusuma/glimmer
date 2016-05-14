@@ -65,7 +65,6 @@ abstract class AppendOpcode<T extends Insertion> extends Opcode {
   protected abstract updateWith(cache: ReferenceCache<T>, bounds: Fragment, upsert: Upsert): UpdateOpcode<T>;
 
   evaluate(vm: VM) {
-    debugger;
     let reference = this.normalize(vm.frame.getOperand());
     let cache = new ReferenceCache(reference);
     let value = cache.peek();

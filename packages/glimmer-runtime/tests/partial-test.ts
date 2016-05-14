@@ -1,5 +1,5 @@
 import { Template, RenderResult } from "glimmer-runtime";
-import { BasicComponent, TestEnvironment, TestDynamicScope, equalTokens } from "glimmer-test-helpers";
+import { BasicComponent, TestEnvironment, TestDynamicScope, equalTokens, strip } from "glimmer-test-helpers";
 import { UpdatableReference } from "glimmer-object-reference";
 import { Opaque, opaque } from 'glimmer-util';
 
@@ -94,6 +94,48 @@ QUnit.test('dynamic partial with self reference', assert => {
   equalTokens(root, `I know partial. I have the best partials.`);
 });
 
+QUnit.test('changing dynamic partial with self reference', assert => {
+  let template = compile(`{{partial name}}`);
+
+  env.registerPartial('weezy', `Ain't my birthday but I got my {{item}} on the cake.`);
+  env.registerPartial('birdman', `Respeck my {{item}}. When my {{item}} come up put some respeck on it.`);
+  render(template, { name: 'weezy', item: 'name' });
+
+  equalTokens(root, `Ain't my birthday but I got my name on the cake.`);
+  rerender({ name: 'birdman', item: 'name' });
+  equalTokens(root, `Respeck my name. When my name come up put some respeck on it.`);
+  rerender({ name: 'birdman', item: 'name' });
+  equalTokens(root, `Respeck my name. When my name come up put some respeck on it.`);
+});
+
+QUnit.test('changing dynamic partial and changing reference values', assert => {
+  let template = compile(`{{partial name}}`);
+
+  env.registerPartial('weezy', `Ain't my birthday but I got my {{item}} on the cake.`);
+  env.registerPartial('birdman', `Respeck my {{item}}. When my {{item}} come up put some respeck on it.`);
+  render(template, { name: 'weezy', item: 'partial' });
+
+  equalTokens(root, `Ain't my birthday but I got my partial on the cake.`);
+  rerender({ name: 'birdman', item: 'name' });
+  equalTokens(root, `Respeck my name. When my name come up put some respeck on it.`);
+  rerender({ name: 'birdman', item: 'name' });
+  equalTokens(root, `Respeck my name. When my name come up put some respeck on it.`);
+});
+
+QUnit.test('changing dynamic partial and changing references', assert => {
+  let template = compile(`{{partial name}}`);
+
+  env.registerPartial('weezy', `Ain't my birthday but I got my {{item}} on the cake.`);
+  env.registerPartial('birdman', `Respeck my {{noun}}. When my {{noun}} come up put some respeck on it.`);
+  render(template, { name: 'weezy', item: 'partial' });
+
+  equalTokens(root, `Ain't my birthday but I got my partial on the cake.`);
+  rerender({ name: 'birdman', noun: 'name' });
+  equalTokens(root, `Respeck my name. When my name come up put some respeck on it.`);
+  rerender({ name: 'birdman', noun: 'name' });
+  equalTokens(root, `Respeck my name. When my name come up put some respeck on it.`);
+});
+
 QUnit.test('dynamic partial with local reference', assert => {
   let template = compile(`{{#each qualities key='id' as |quality|}}{{partial name}}. {{/each}}`);
 
@@ -103,4 +145,20 @@ QUnit.test('dynamic partial with local reference', assert => {
   equalTokens(root, `You smaht. You loyal. `);
   rerender({ name: 'test', qualities: ['smaht', 'loyal'] });
   equalTokens(root, `You smaht. You loyal. `);
+});
+
+QUnit.test('partial without arguments throws', assert => {
+  let template = compile(`Before {{partial}} After`);
+
+  assert.throws(function() {
+    render(template);
+  }, strip`Partial found with no arguments. You must specify a template.`);
+});
+
+QUnit.test('partial with more than one argument throws', assert => {
+  let template = compile(`Before {{partial 'turnt' 'up'}} After`);
+
+  assert.throws(function() {
+    render(template);
+  }, strip`Partial found with more than one argument. You can only specify a single template.`);
 });

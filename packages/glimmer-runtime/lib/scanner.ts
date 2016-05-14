@@ -49,7 +49,6 @@ export default class Scanner {
   }
 
   private buildBlock(block: SerializedBlock, blocks: InlineBlock[]): InlineBlock{
-    debugger;
     let { program, children } = this.buildStatements(block, blocks);
     return new InlineBlock({ children, locals: block.locals, program, symbolTable: null });
   }
